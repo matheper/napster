@@ -24,28 +24,16 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
             filename = data['filename']
             response = []
             for client in clientsList:
-                print "filename: %s"%(filename)
-                print "listFiles: %s"%(clientsList[client])
                 if filename in clientsList[client]:
                     response.append(client)
-                    print 'Igual'
             response = str(response)
             self.request.sendall(response)
-
 
     def handle(self):
         message = self.request.recv(1024)
         self.processMessage(message)
         data = eval(message)
-
         cur_thread = threading.current_thread()
-#        response = "{}: {}".format(cur_thread.name, data)
-#        self.request.sendall(response)
-        
-#        message = data.split('\n')
-#        port = int(message[0])
-#        clientsList[port] = message[1].split(' ')
-#        print clientsList
         print data
 
 class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
@@ -54,7 +42,6 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 if __name__ == "__main__":
     # Port 0 means to select an arbitrary unused port
     HOST, PORT = "localhost", 8004
-
     server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
     ip, port = server.server_address
 
@@ -64,23 +51,25 @@ if __name__ == "__main__":
     # Exit the server thread when the main thread terminates
     server_thread.daemon = True
     server_thread.start()
-    print "Server loop running in thread:", server_thread.name
+    print "Server loop running in thread: %s."%(server_thread.name)
     
     while True:
         time.sleep(2)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
         try:
             client = ()
             for i in clientsList:
                 client = i
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.connect(client)
                 message = {}
                 message['type'] = 4 #teste conexao
                 data = str(message)
                 sock.sendall(data)
-                print client
+                sock.close()
         except:
             clientsList.pop(i)
-            print 'Cliente %s desconectado por estar off line.'%(i[0])
+            print "Cliente (%s,%s) desconnected."%(i[0],i[1])
         finally:
             sock.close()
